@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="baguette_bakery_bakery" resource="default" engine="innodb" comment="Bakery Table">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true"
+                comment="Entity Id"/>
+        <column xsi:type="varchar" name="title" nullable="false" length="255" comment="Bakery Title"/>
+        <column xsi:type="mediumtext" name="description" nullable="true" comment="Bakery Description"/>
+        <column xsi:type="mediumtext" name="address" nullable="true" comment="Bakery Address"/>
+        <column xsi:type="smallint" name="is_active" padding="6" unsigned="false" nullable="false" identity="false"
+                default="1" comment="Is Bakery Active"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="Creation Time"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="Update Time"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <index referenceId="BAGUETTE_BAKERY_TITLE_DESCRIPTION" indexType="fulltext">
+            <column name="title"/>
+            <column name="description"/>
+        </index>
+    </table>
+
+    <table name="baguette_bakery_bakery_product" resource="default" engine="innodb" comment="Bakery Product Table">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true"
+                comment="Entity Id"/>
+        <column xsi:type="int" name="bakery_id" padding="10" unsigned="true" nullable="false" comment="bakery Id"/>
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" comment="product Id"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="Creation Time"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="Update Time"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="BAGUETTE_BAKERY_BAKERY_PRODUCT_BAKERY_ID_BAGUETTE_BAKERY_BAKERY_ENTITY_ID" table="baguette_bakery_bakery_product"
+                    column="bakery_id" referenceTable="baguette_bakery_bakery" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="BAGUETTE_BAKERY_BAKERY_PRODUCT_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID" table="baguette_bakery_bakery_product"
+                    column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+</schema>

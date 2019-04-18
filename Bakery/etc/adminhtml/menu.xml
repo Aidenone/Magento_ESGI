@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Baguette_Bakery::bakery_head" title="Bakery" module="Baguette_Bakery" sortOrder="100" resource="Baguette_Bakery::bakery_head" />
+        <add id="Baguette_Bakery::bakery" title="Bakeries" module="Baguette_Bakery" sortOrder="10" parent="Baguette_Bakery::bakery_head" action="bakery/bakery" resource="Baguette_Bakery::bakery" />
+    </menu>
+</config>

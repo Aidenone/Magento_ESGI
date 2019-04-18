@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Baguette\Bakery\Api\Data\BakeryInterface" type="Baguette\Bakery\Model\Bakery"/>
+    <preference for="Baguette\Bakery\Api\BakeryRepositoryInterface" type="Baguette\Bakery\Model\BakeryRepository"/>
+
+    <!-- Create our type BakeryGridDataProvider -->
+    <virtualType name="BakeryGridDataProvider" type="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider">
+        <arguments>
+            <argument name="collection" xsi:type="object" shared="false">Baguette\Bakery\Model\ResourceModel\Bakery\Collection</argument>
+            <argument name="filterPool" xsi:type="object" shared="false">BakeryGridFilterPool</argument> <!-- Define new object for filters -->
+        </arguments>
+    </virtualType>
+
+    <!-- Create our type BakeryProductGridDataProvider -->
+    <virtualType name="BakeryProductGridDataProvider" type="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider">
+        <arguments>
+            <argument name="collection" xsi:type="object" shared="false">Baguette\Bakery\Model\ResourceModel\Bakery\Product\Collection</argument>
+            <argument name="filterPool" xsi:type="object" shared="false">BakeryGridFilterPool</argument> <!-- Define new object for filters -->
+        </arguments>
+    </virtualType>
+
+    <!-- Create our type BakeryGridFilterPool -->
+    <virtualType name="BakeryGridFilterPool" type="Magento\Framework\View\Element\UiComponent\DataProvider\FilterPool">
+        <arguments>
+            <argument name="appliers" xsi:type="array">
+                <item name="regular" xsi:type="object">Magento\Framework\View\Element\UiComponent\DataProvider\RegularFilter</item>
+                <item name="fulltext" xsi:type="object">Magento\Framework\View\Element\UiComponent\DataProvider\FulltextFilter</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Type for bakery_bakery_listing_data_source -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="bakery_bakery_listing_data_source" xsi:type="string">Baguette\Bakery\Model\ResourceModel\Grid\Bakery\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Type for bakery_product_listing_data_source -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="bakery_product_listing_data_source" xsi:type="string">Baguette\Bakery\Model\ResourceModel\Grid\Bakery\Product\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Simulate our class Baguette\Bakery\Model\ResourceModel\Grid\Bakery\Collection -->
+    <virtualType name="Baguette\Bakery\Model\ResourceModel\Grid\Bakery\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">baguette_bakery_bakery</argument>
+            <argument name="resourceModel" xsi:type="string">Baguette\Bakery\Model\ResourceModel\Bakery</argument>
+        </arguments>
+    </virtualType>
+
+    <!-- Simulate our class Baguette\Bakery\Model\ResourceModel\Grid\Bakery\Product\Collection -->
+    <virtualType name="Baguette\Bakery\Model\ResourceModel\Grid\Bakery\Product\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">catalog_product_entity</argument>
+            <argument name="resourceModel" xsi:type="string">Magento\Catalog\Model\ResourceModel\Product</argument>
+        </arguments>
+    </virtualType>
+</config>
