@@ -54,9 +54,10 @@ class Save extends \Magento\Backend\App\Action
             if ($id) {
                 $model->load($id);
             }
-            $temp_data = $data;
-            if(isset($temp_data['products']))
-                unset($temp_data['products']);
+            $temp_data = [];
+            $temp_data["title"] = $data["title"];
+            $temp_data["address"] = $data["address"];
+            $temp_data["description"] = $data["description"];
             $model->setData($temp_data);
             try {
                 $model->save();
@@ -82,31 +83,30 @@ class Save extends \Magento\Backend\App\Action
     public function saveProducts($model, $post)
     {
         // Attach the attachments to bakery
-        if (!isset($post['products'])) {
-            $post['products'] = "";
-        }
-        $productIds = $this->_jsHelper->decodeGridSerializedInput($post['products']);
-        try {
-            $oldProducts = (array) $model->getProducts($model);
-            $newProducts = (array) $productIds;
-            $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()->get('Magento\Framework\App\ResourceConnection');
-            $connection = $this->_resources->getConnection();
-            $table = $this->_resources->getTableName(\Baguette\Bakery\Model\ResourceModel\Bakery::TBL_ATT_PRODUCT);
-            $insert = array_diff($newProducts, $oldProducts);
-            $delete = array_diff($oldProducts, $newProducts);
-            if ($delete) {
-                $where = ['bakery_id = ?' => (int)$model->getId(), 'product_id IN (?)' => $delete];
-                $connection->delete($table, $where);
-            }
-            if ($insert) {
-                $data = [];
-                foreach ($insert as $product_id) {
-                    $data[] = ['bakery_id' => (int)$model->getId(), 'product_id' => (int)$product_id];
+        if (isset($post['products'])) {
+            $productIds = $this->_jsHelper->decodeGridSerializedInput($post['products']);
+            try {
+                $oldProducts = (array)$model->getProducts($model);
+                $newProducts = (array)$productIds;
+                $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()->get('Magento\Framework\App\ResourceConnection');
+                $connection = $this->_resources->getConnection();
+                $table = $this->_resources->getTableName(\Baguette\Bakery\Model\ResourceModel\Bakery::TBL_ATT_PRODUCT);
+                $insert = array_diff($newProducts, $oldProducts);
+                $delete = array_diff($oldProducts, $newProducts);
+                if ($delete) {
+                    $where = ['bakery_id = ?' => (int)$model->getId(), 'product_id IN (?)' => $delete];
+                    $connection->delete($table, $where);
                 }
-                $connection->insertMultiple($table, $data);
+                if ($insert) {
+                    $data = [];
+                    foreach ($insert as $product_id) {
+                        $data[] = ['bakery_id' => (int)$model->getId(), 'product_id' => (int)$product_id];
+                    }
+                    $connection->insertMultiple($table, $data);
+                }
+            } catch (Exception $e) {
+                $this->messageManager->addException($e, __('Something went wrong while saving the bakery.'));
             }
-        } catch (Exception $e) {
-            $this->messageManager->addException($e, __('Something went wrong while saving the bakery.'));
         }
 
     }
