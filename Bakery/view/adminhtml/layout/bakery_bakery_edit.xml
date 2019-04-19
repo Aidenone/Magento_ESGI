@@ -1,11 +1,29 @@
 <?xml version="1.0"?>
-<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <update handle="styles"/>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="admin-2columns-left" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <update handle="editor"/>
     <body>
         <referenceContainer name="content">
-            <uiComponent name="bakery_bakery_form"/>
-            <uiComponent name="bakery_bakery_product_grid"/>
+            <block class="Baguette\Bakery\Block\Adminhtml\Bakery\Edit" name="bakery_bakery_edit"/>
+        </referenceContainer>
+        <referenceContainer name="left">
+            <block class="Baguette\Bakery\Block\Adminhtml\Bakery\Edit\Tabs" name="bakery_bakery_edit_tabs">
+                <block class="Baguette\Bakery\Block\Adminhtml\Bakery\Edit\Tab\Main" name="bakery_bakery_edit_tab_main"/>
+                <action method="addTab">
+                    <argument name="name" xsi:type="string">main_section</argument>
+                    <argument name="block" xsi:type="string">
+                        bakery_bakery_edit_tab_main
+                    </argument>
+                </action>
+                <action method="addTab">
+                    <argument name="name" xsi:type="string">attachment_products</argument>
+                    <argument name="block" xsi:type="array">
+                        <item name="label" xsi:type="string">Select Products</item>
+                        <item name="title" xsi:type="string">Select Products</item>
+                        <item name="url" xsi:type="helper" helper="Baguette\Bakery\Helper\Data::getBakeryUrl"></item>
+                        <item name="class" xsi:type="string">ajax</item>
+                    </argument>
+                </action>
+            </block>
         </referenceContainer>
     </body>
 </page>

@@ -1,116 +1,113 @@
 <?php
 
-namespace Baguette\Bakery\Controller\Adminhtml\Bakery;
-
+namespace Baguette\Bakery\Controller\Adminhtml\Bakery
+;
+use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
-use Baguette\Bakery\Model\Bakery;
-use Baguette\Bakery\Model\BakeryFactory;
-use Baguette\Bakery\Model\ResourceModel\Bakery as BakeryResourceModel;
-use Baguette\Bakery\Api\BakeryRepositoryInterface;
-use Magento\Framework\App\Request\DataPersistorInterface;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\ErrorLog\Logger;
 
-class Save extends \Baguette\Bakery\Controller\Adminhtml\Bakery
+class Save extends \Magento\Backend\App\Action
 {
     /**
-     * @var DataPersistorInterface
+     * @var \Magento\Backend\Helper\Js
      */
-    protected $dataPersistor;
+    protected $_jsHelper;
     /**
-     * Description $bakeryRepository field
-     *
-     * @var BakeryRepositoryInterface $bakeryRepository
+     * @var \Baguette\Bakery\Model\ResourceModel\Bakery\CollectionFactory
      */
-    protected $bakeryRepository;
+    protected $_bakeryCollectionFactory;
     /**
-     * Description $bakeryFactory field
-     *
-     * @var BakeryFactory $bakeryFactory
-     */
-    protected $bakeryFactory;
-    /**
-     * Description $bakeryResourceModel field
-     *
-     * @var BakeryResourceModel $bakeryResourceModel
-     */
-    protected $bakeryResourceModel;
-
-    /**
-     * Save constructor
-     *
-     * @param Context                       $context
-     * @param \Magento\Framework\Registry   $coreRegistry
-     * @param DataPersistorInterface        $dataPersistor
-     * @param BakeryRepositoryInterface $bakeryRepository
-     * @param BakeryFactory             $bakeryFactory
-     * @param BakeryResourceModel       $bakeryResourceModel
+     * \Magento\Backend\Helper\Js $jsHelper
+     * @param Action\Context $context
      */
     public function __construct(
         Context $context,
-        \Magento\Framework\Registry $coreRegistry,
-        DataPersistorInterface $dataPersistor,
-        BakeryRepositoryInterface $bakeryRepository,
-        BakeryFactory $bakeryFactory,
-        BakeryResourceModel $bakeryResourceModel
+        \Magento\Backend\Helper\Js $jsHelper,
+        \Baguette\Bakery\Model\ResourceModel\Bakery\CollectionFactory $bakeryCollectionFactory
     ) {
-        parent::__construct($context, $coreRegistry);
-
-        $this->dataPersistor           = $dataPersistor;
-        $this->bakeryRepository    = $bakeryRepository;
-        $this->bakeryFactory       = $bakeryFactory;
-        $this->bakeryResourceModel = $bakeryResourceModel;
+        $this->_jsHelper = $jsHelper;
+        $this->_bakeryCollectionFactory = $bakeryCollectionFactory;
+        parent::__construct($context);
     }
-
+    /**
+     * {@inheritdoc}
+     */
+    protected function _isAllowed()
+    {
+        return true;
+    }
     /**
      * Save action
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @return \Magento\Framework\Controller\ResultInterface
      */
     public function execute()
     {
+        $data = $this->getRequest()->getPostValue();
+
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultRedirectFactory->create();
-        $data           = $this->getRequest()->getPostValue();
         if ($data) {
-            if (empty($data['entity_id'])) {
-                $data['entity_id'] = null;
-            }
-
-            /** @var Bakery $model */
-            $model = $this->bakeryFactory->create();
-
-            $id = $this->getRequest()->getParam('entity_id');
+            /** @var \Baguette\Bakery\Model\Bakery $model */
+            $model = $this->_objectManager->create('Baguette\Bakery\Model\Bakery');
+            $id = $this->getRequest()->getParam('id');
             if ($id) {
-                try {
-                    $model = $this->bakeryRepository->getById($id);
-                } catch (LocalizedException $e) {
-                    $this->messageManager->addErrorMessage(__('This bakery no longer exists.'));
-
-                    return $resultRedirect->setPath('*/*/');
-                }
+                $model->load($id);
             }
-
-            $model->setData($data);
-
+            $temp_data = $data;
+            if(isset($temp_data['products']))
+                unset($temp_data['products']);
+            $model->setData($temp_data);
             try {
-                $this->bakeryRepository->save($model);
+                $model->save();
+                $this->saveProducts($model, $data);
+                $this->messageManager->addSuccess(__('You saved this bakery.'));
+                $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
                 if ($this->getRequest()->getParam('back')) {
-                    return $resultRedirect->setPath('*/*/edit', ['id' => $model->getId()]);
+                    return $resultRedirect->setPath('*/*/edit', ['bakery_id' => $model->getId(), '_current' => true]);
                 }
-
                 return $resultRedirect->setPath('*/*/');
-            } catch (LocalizedException $e) {
-                $this->messageManager->addErrorMessage($e->getMessage());
+            } catch (\Magento\Framework\Exception\LocalizedException $e) {
+                $this->messageManager->addError($e->getMessage());
+            } catch (\RuntimeException $e) {
+                $this->messageManager->addError($e->getMessage());
             } catch (\Exception $e) {
-                $this->messageManager->addExceptionMessage($e, __('Something went wrong while saving the bakery.'));
+                $this->messageManager->addException($e, __('Something went wrong while saving the bakery THIS.'));
             }
-
-            $this->dataPersistor->set('bakery_bakery', $data);
-
-            return $resultRedirect->setPath('*/*/edit', ['entity_id' => $id]);
+            $this->_getSession()->setFormData($data);
+            return $resultRedirect->setPath('*/*/edit', ['bakery_id' => $this->getRequest()->getParam('bakery_id')]);
+        }
+        return $resultRedirect->setPath('*/*/');
+    }
+    public function saveProducts($model, $post)
+    {
+        // Attach the attachments to bakery
+        if (!isset($post['products'])) {
+            $post['products'] = "";
+        }
+        $productIds = $this->_jsHelper->decodeGridSerializedInput($post['products']);
+        try {
+            $oldProducts = (array) $model->getProducts($model);
+            $newProducts = (array) $productIds;
+            $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()->get('Magento\Framework\App\ResourceConnection');
+            $connection = $this->_resources->getConnection();
+            $table = $this->_resources->getTableName(\Baguette\Bakery\Model\ResourceModel\Bakery::TBL_ATT_PRODUCT);
+            $insert = array_diff($newProducts, $oldProducts);
+            $delete = array_diff($oldProducts, $newProducts);
+            if ($delete) {
+                $where = ['bakery_id = ?' => (int)$model->getId(), 'product_id IN (?)' => $delete];
+                $connection->delete($table, $where);
+            }
+            if ($insert) {
+                $data = [];
+                foreach ($insert as $product_id) {
+                    $data[] = ['bakery_id' => (int)$model->getId(), 'product_id' => (int)$product_id];
+                }
+                $connection->insertMultiple($table, $data);
+            }
+        } catch (Exception $e) {
+            $this->messageManager->addException($e, __('Something went wrong while saving the bakery.'));
         }
 
-        return $resultRedirect->setPath('*/*/');
     }
 }

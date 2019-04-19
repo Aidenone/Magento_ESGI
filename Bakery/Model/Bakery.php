@@ -157,4 +157,19 @@ class Bakery extends AbstractModel implements BakeryInterface, IdentityInterface
 
         return parent::beforeSave();
     }
+
+    public function getProducts(\Baguette\Bakery\Model\Bakery $object)
+    {
+        $tbl = $this->getResource()->getTable(\Baguette\Bakery\Model\ResourceModel\Bakery::TBL_ATT_PRODUCT);
+
+        $select = $this->getResource()->getConnection()->select()->from(
+            $tbl,
+            ['product_id']
+        )
+            ->where(
+                'bakery_id = ?',
+                (int)$object->getId()
+            );
+        return $this->getResource()->getConnection()->fetchCol($select);
+    }
 }

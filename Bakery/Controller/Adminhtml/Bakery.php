@@ -9,7 +9,7 @@ abstract class Bakery extends \Magento\Backend\App\Action
      *
      * @see _isAllowed()
      */
-    const ADMIN_RESOURCE = 'Esgi_Job::department';
+    const ADMIN_RESOURCE = 'Baguette_Bakery::bakery';
     /**
      * Core registry
      *
